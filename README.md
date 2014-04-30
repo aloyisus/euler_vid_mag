@@ -28,7 +28,9 @@ e.g. amplify_spatial_Gdown_temporal_ideal('sample/face_source.mov','sample/',50,
 Below are the results obtained by processing the supplied "face.mov" file provided by the authors:
 
 Unprocessed:
-![screenshot](https://https://raw.githubusercontent.com/aloyisus/euler_vid_mag/master/unprocessed.gif)
+
+![screenshot](https://raw.githubusercontent.com/aloyisus/euler_vid_mag/master/unprocessed.gif)
 
 Processed:
+
 ![screenshot](https://raw.githubusercontent.com/aloyisus/euler_vid_mag/master/processed.gif)
