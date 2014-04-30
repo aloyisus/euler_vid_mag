@@ -1,7 +1,7 @@
 euler_vid_mag
 =============
 
-A python implementation of one of MIT's Eulerian Video Magnification algorithms from the Siggraph 2012 paper
+A python implementation of one of MIT's Eulerian Video Magnification algorithms from the Siggraph 2012 paper. The technique described reveals otherwise hidden information in an ordinary video stream by magnifying small colour changes in an ordinary video stream. This can be used, for example, to reveal the blood flow in a person's face.
 
 The paper can be found here http://people.csail.mit.edu/mrub/vidmag/ and is a great read.
 
