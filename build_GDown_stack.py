@@ -1,81 +1,59 @@
-# -*- coding: utf-8 -*-
-
 import cv2
 import numpy as np
-import Blur
-import sys
+import blur
 
+class GStack:
+    def __init__(self):
+        self.data = None
+        self.size = (0,0)
+        self.level = 0
 
-#grab next frame in video, convert to float, if necessary convert to YUV, blur and subdivide
-def return_next_frame_blurred(vid,level,colourSpace):
+    def build_gdown_stack(
+        self,
+        videocapture,
+        level,
+        progress_callback = lambda x: x,
+    ):
+        self.level = level
 
-	retval,temp = vid.read()
-	temp = temp.astype(np.float32)
+        # Read video
+        self.count = int(videocapture.get(cv2.CAP_PROP_FRAME_COUNT))
+        vidWidth = int(videocapture.get(cv2.CAP_PROP_FRAME_WIDTH))
+        vidHeight = int(videocapture.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-	if colourSpace == 'yuv':
-		temp = cv2.cvtColor(temp,cv2.COLOR_BGR2YUV)
+        #firstFrame
+        blurred = return_next_frame_blurred(videocapture, self.level)
+        self.size = blurred.shape
 
-	return Blur.blurDnClr(temp,level)
+        # create pyr stack
+        self.data = np.zeros((
+                blurred.shape[0]*blurred.shape[1],
+                3,
+                self.count,
+        ))
+        for channel in [0,1,2]:
+            self.data[:,channel,0] = blurred[:,:,channel].flatten()
 
+        progress_callback(50/self.count)
+        for k in range(1,self.count):
 
+            #process the video frame and add it to the stack
+            blurred = return_next_frame_blurred(videocapture, self.level)
+            for channel in [0,1,2]:        
+                self.data[:,channel,k] = blurred[:,:,channel].flatten()
 
+            progress_callback(50/self.count)
 
-# GDOWN_STACK = build_GDown_stack(VID_FILE, START_INDEX, END_INDEX, LEVEL)
-# 
-# Apply Gaussian pyramid decomposition on VID_FILE from START_INDEX to
-# END_INDEX and select a specific band indicated by LEVEL
-# 
-# GDOWN_STACK: stack of one band of Gaussian pyramid of each frame 
-# the first dimension is the time axis
-# the second dimension is the y axis of the video
-# the third dimension is the x axis of the video
-# the forth dimension is the color channel
-# 
-# Copyright (c) 2011-2012 Massachusetts Institute of Technology, 
-# Quanta Research Cambridge, Inc.
-#
-# Authors: Hao-yu Wu, Michael Rubinstein, Eugene Shih, 
-# License: Please refer to the LICENCE file
-# Date: June 2012
-#
-def build_GDown_stack(vidFile, startIndex, endIndex, level, colourSpace = 'rgb'):
-
-
-    # Read video
-    vid = cv2.VideoCapture(vidFile)
-    fps = vid.get(cv2.cv.CV_CAP_PROP_FPS)
-    framecount = vid.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT)
-    vidWidth = int(vid.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH))
-    vidHeight = int(vid.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))
-
-
-    #firstFrame
-    blurred = return_next_frame_blurred(vid,level,colourSpace)
-    
-    # create pyr stack
-    GDown_stack = np.zeros((endIndex - startIndex +1, blurred.shape[0],blurred.shape[1],blurred.shape[2]))
-    GDown_stack[0,:,:,:] = blurred
-
-
-    for k in range(1,endIndex-startIndex+1):
-
-        #process the video frame and add it to the stack
-        GDown_stack[k,:,:,:] = return_next_frame_blurred(vid,level,colourSpace)
+        videocapture.release()
         
-        #progress indicator
-        sys.stdout.write('.')
-        sys.stdout.flush()
-       
-    return GDown_stack
-    
+        return self.data
 
+    def iterate_over_stack_frames(self):
+        for k in range(self.count):  
+            yield self.data[:, :, k].reshape(self.size[0], self.size[1], 3)
 
+def return_next_frame_blurred(videocapture, level):
 
-def main():
-    return
-
-
-
-if __name__=="__main__":
-    
-    main()
+	retval,temp = videocapture.read()
+	temp = temp.astype(np.float32)
+	return blur.blur_dn_clr(temp, level)
