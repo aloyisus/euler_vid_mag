@@ -1,0 +1,146 @@
+from euler_vid_mag import phase_amplify_to_file as phase_amplify
+from euler_vid_mag.phasebased.filters import *
+
+from pathlib import Path
+
+dataDir = Path('./sample/')
+
+resultsDir = Path('./sample/ResultsSIGGRAPH2013/')
+if not resultsDir.exists():
+    resultsDir.mkdir()
+
+defaultPyrType = 'halfOctave' # Half octave pyramid is default as discussed in paper
+scaleAndClipLargeVideos = True # With this enabled, approximately 4GB of memory is used
+
+# % Uncomment to use octave bandwidth pyramid: speeds up processing,
+# % but will produce slightly different results
+# defaultPyrType = 'octave'
+
+# % Uncomment to process full video sequences (uses about 16GB of memory)
+# scaleAndClipLargeVideos = False
+
+# Car Engine
+inFile = str(dataDir / 'car_engine.avi')
+samplingRate = 400 # Hz
+loCutoff = 15    # Hz
+hiCutoff = 25    # Hz
+alpha = 15    
+sigma = 3         # Pixels
+pyrType = 'octave'
+if scaleAndClipLargeVideos:
+    phase_amplify(inFile, alpha, loCutoff, hiCutoff, samplingRate, resultsDir, sigma = sigma, pyrtype = pyrType, scalevideo = 0.5)
+else:
+    phase_amplify(inFile, alpha, loCutoff, hiCutoff, samplingRate, resultsDir, sigma = sigma, pyrtype = pyrType, scalevideo = 1)
+# The sequence is very large. To save on CPU time, we set
+# pyramid type to 'octave'. If you have the resources or time, feel free to change it
+# to 'halfOctave'
+
+
+#Crane
+inFile = str(dataDir / 'crane.avi')
+samplingRate = 24 # Hz
+loCutoff = 0.2    # Hz
+hiCutoff = 0.25    # Hz
+alpha = 100    
+sigma = 5         # Pixels
+temporalFilter = FIRWindowBP 
+pyrType = defaultPyrType
+if scaleAndClipLargeVideos:
+    phase_amplify(inFile, alpha, loCutoff, hiCutoff, samplingRate, resultsDir, sigma = sigma, pyrtype = pyrType, temporalFilter = temporalFilter, scalevideo = 2/3)
+else:
+    phase_amplify(inFile, alpha, loCutoff, hiCutoff, samplingRate, resultsDir, sigma = sigma, pyrtype = pyrType, temporalFilter = temporalFilter, scalevideo = 1)
+
+
+#Crane Crop
+inFile = str(dataDir / 'crane_crop.avi')
+samplingRate = 24 # Hz
+loCutoff = 0.2    # Hz
+hiCutoff = 0.25    # Hz
+alpha = 75    
+sigma = 5         # Pixels
+temporalFilter = FIRWindowBP
+
+# Comparison of cropped crane
+pyrType = 'octave'
+phase_amplify(inFile, alpha, loCutoff, hiCutoff, samplingRate, resultsDir, sigma = sigma, pyrtype = pyrType, temporalFilter = temporalFilter)
+
+pyrType = 'halfOctave'
+phase_amplify(inFile, alpha, loCutoff, hiCutoff, samplingRate, resultsDir, sigma = sigma, pyrtype = pyrType, temporalFilter = temporalFilter)
+
+pyrType = 'quarterOctave'
+phase_amplify(inFile, alpha, loCutoff, hiCutoff, samplingRate, resultsDir, sigma = sigma, pyrtype = pyrType, temporalFilter = temporalFilter)
+
+
+# Eye
+inFile = str(dataDir /  'eye.avi')
+samplingRate = 500 # Hz
+loCutoff = 30    # Hz
+hiCutoff = 50    # Hz
+alpha = 75    
+sigma = 4         # Pixels
+pyrType = 'octave'
+
+if scaleAndClipLargeVideos:
+    phase_amplify(inFile, alpha, loCutoff, hiCutoff, samplingRate, resultsDir, sigma = sigma, pyrtype = pyrType, scalevideo = 0.4)
+else:
+    phase_amplify(inFile, alpha, loCutoff, hiCutoff, samplingRate, resultsDir, sigma = sigma, pyrtype = pyrType, scalevideo = 1)
+# The sequence is very large. To save on memory and CPU time, we set
+# pyramid type to 'octave'. If you have the resources, feel free to change it
+# to 'halfOctave'
+
+
+# Trees
+inFile = str(dataDir / 'trees.avi')
+samplingRate = 60 # Hz
+alpha = 25
+sigma = 2         # Pixels 
+attenuateOtherFrequencies = True
+pyrType = defaultPyrType
+
+# Low frequencies
+loCutoff = 0.5    # Hz
+hiCutoff = 1    # Hz
+phase_amplify(inFile, alpha, loCutoff, hiCutoff, samplingRate, resultsDir, sigma = sigma, attenuateOtherFreq = attenuateOtherFrequencies, pyrtype = pyrType)
+
+# Middle frequencies
+loCutoff = 1.5
+hiCutoff = 2
+phase_amplify(inFile, alpha, loCutoff, hiCutoff, samplingRate, resultsDir, sigma = sigma, attenuateOtherFreq = attenuateOtherFrequencies, pyrtype = pyrType)
+
+
+# Throat
+inFile = str(dataDir / 'throat.avi')
+samplingRate = 1900 # Hz
+loCutoff = 90    # Hz
+hiCutoff = 110    # Hz
+alpha = 100    
+sigma = 3         # Pixels
+pyrType = 'octave'
+
+if scaleAndClipLargeVideos:
+    phase_amplify(inFile, alpha, loCutoff, hiCutoff, samplingRate, resultsDir, sigma = sigma, pyrtype = pyrType, scalevideo = 2/3)
+else:
+    phase_amplify(inFile, alpha, loCutoff, hiCutoff, samplingRate, resultsDir, sigma = sigma, pyrtype = pyrType, scalevideo = 1)
+
+
+# Woman
+inFile = str(dataDir / 'woman.avi')
+samplingRate = 60 # Hz
+sigma = 3
+alpha = 15
+attenuateOtherFrequencies = True
+pyrType = defaultPyrType
+
+# Low frequencies
+loCutoff = 0.35
+hiCutoff = 0.71
+if scaleAndClipLargeVideos:
+    phase_amplify(inFile, alpha, loCutoff, hiCutoff, samplingRate, resultsDir, sigma = sigma, attenuateOtherFreq = attenuateOtherFrequencies, pyrtype = pyrType, scalevideo = 0.9)
+else:
+    phase_amplify(inFile, alpha, loCutoff, hiCutoff, samplingRate, resultsDir, sigma = sigma, attenuateOtherFreq = attenuateOtherFrequencies, pyrtype = pyrType, scalevideo = 1)
+
+#Middle frequencies
+loCutoff = 1
+hiCutoff = 1.9
+phase_amplify(inFile, alpha, loCutoff, hiCutoff, samplingRate, resultsDir, sigma = sigma, attenuateOtherFreq = attenuateOtherFrequencies, pyrtype = pyrType)
+

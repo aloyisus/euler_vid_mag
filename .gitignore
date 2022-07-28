@@ -1,4 +1,7 @@
-
+.DS_Store
 *.pyc
-.venv/*
-sample/*
+.venv/
+sample/
+private/
+__pycache__/
+*.egg-info

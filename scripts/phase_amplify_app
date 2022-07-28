@@ -1,0 +1,307 @@
+#!/usr/bin/env python
+
+import cv2
+from tkinter import filedialog as fd
+import tkinter as tk
+from tkinter import ttk
+
+from pathlib import Path
+import threading
+
+from euler_vid_mag import get_phase_amplified_frames
+
+
+class App:
+
+    OPTIONS = [
+        "octave",
+        "halfOctave",
+        "smoothHalfOctave",
+        "quarterOctave",
+    ]
+
+    def __init__(self):
+        self.buffer = []
+        self.filename = ""
+        self.framerate = 30
+
+        self.window = tk.Tk()
+        self.window.title("Phase-based Motion Magnification Demo")
+        self.window.bind("<<Halt_Thread>>", self.amplify_thread_finished)
+
+        self.main_container = tk.Frame(self.window)
+        self.main_container.pack(side="top", fill="both", expand=True)
+
+        self.fl_frame = tk.Frame(self.main_container)
+        self.fl_frame.pack(side="top", fill="both", expand=True)
+        self.fh_frame = tk.Frame(self.main_container)
+        self.fh_frame.pack(side="top", fill="both", expand=True)
+        self.alpha_frame = tk.Frame(self.main_container)
+        self.alpha_frame.pack(side="top", fill="both", expand=True)
+        self.sigma_frame = tk.Frame(self.main_container)
+        self.sigma_frame.pack(side="top", fill="both", expand=True)
+        self.sample_frame = tk.Frame(self.main_container)
+        self.sample_frame.pack(side="top", fill="both", expand=True)
+        self.octave_frame = tk.Frame(self.main_container)
+        self.octave_frame.pack(side="top", fill="both", expand=True)
+        self.scale_frame = tk.Frame(self.main_container)
+        self.scale_frame.pack(side="top", fill="both", expand=True)
+
+        self.progress_frame = tk.Frame(self.main_container)
+        self.progress_frame.pack(side="bottom",expand=True, fill="x")
+
+        self.buttons2 = tk.Frame(self.main_container)
+        self.buttons2.pack(side="bottom",expand=True, fill="y")
+
+        self.buttons1 = tk.Frame(self.main_container)
+        self.buttons1.pack(side="bottom",expand=True, fill="y")
+
+        self.fl_label = tk.Label(
+            self.fl_frame,
+            text="low frequency cutoff (Hz)",
+            anchor="w",
+        )
+        self.fl_label.pack(side="left",expand=True,fill='x')
+        self.fl_entry = tk.Entry(self.fl_frame)
+        self.fl_entry.insert(0, str(15))
+        self.fl_entry.pack(side="right",expand=True,fill='x')
+
+        self.fh_label = tk.Label(
+            self.fh_frame,
+            text="high frequency cutoff (Hz)",
+            anchor="w",
+        )
+        self.fh_label.pack(side="left",expand=True,fill='x')
+        self.fh_entry = tk.Entry(self.fh_frame)
+        self.fh_entry.insert(0, str(25))
+        self.fh_entry.pack(side="right",expand=True,fill='x')
+
+        self.alpha_label = tk.Label(
+            self.alpha_frame,
+            text="magnification factor",
+            anchor="w",
+        )
+        self.alpha_label.pack(side="left",expand=True,fill='x')
+        self.alpha_entry = tk.Entry(self.alpha_frame)
+        self.alpha_entry.insert(0, str(25))
+        self.alpha_entry.pack(side="right",expand=True,fill='x')
+
+        self.sigma_label = tk.Label(
+            self.sigma_frame,
+            text="amount of spatial smoothing (pixels)",
+            anchor="w",
+        )
+        self.sigma_label.pack(side="left",expand=True,fill='x')
+        self.sigma_entry = tk.Entry(self.sigma_frame)
+        self.sigma_entry.insert(0, str(3))
+        self.sigma_entry.pack(side="right",expand=True,fill='x')
+
+        self.sample_label = tk.Label(
+            self.sample_frame,
+            text="sample rate",
+            anchor="w",
+        )
+        self.sample_label.pack(side="left",expand=True,fill='x')
+        self.sample_entry = tk.Entry(self.sample_frame)
+        self.sample_entry.insert(0, str(400))
+        self.sample_entry.pack(side="right",expand=True,fill='x')
+
+        self.octave_label = tk.Label(
+            self.octave_frame,
+            text="pyramid scheme (octave is fastest)",
+            anchor="w",
+        )
+        self.octave_label.pack(side="left",expand=True,fill='x')
+        self.octave_options_var = tk.StringVar(self.octave_frame)
+        self.octave_options_var.set(self.OPTIONS[0]) # default value
+        self.octave_options = tk.OptionMenu(self.octave_frame, self.octave_options_var, *self.OPTIONS)
+        self.octave_options.pack(side="right",expand=True,fill='x')
+
+        self.scale_label = tk.Label(
+            self.scale_frame,
+            text="scale video (values < 1.0 are faster)",
+            anchor="w",
+        )
+        self.scale_label.pack(side="left",expand=True,fill='x')
+        self.scale_entry = tk.Entry(self.scale_frame)
+        self.scale_entry.insert(0, str(1.0))
+        self.scale_entry.pack(side="right",expand=True,fill='x')
+
+        self.file_button = tk.Button(
+            self.buttons1,
+            text="choose file",
+            width=5,
+            height=2,
+            command=self.choose_file,
+        )
+        self.file_button.pack(side="left")
+
+        self.play_file_button = tk.Button(
+            self.buttons1,
+            text="play file",
+            width=5,
+            height=2,
+            command=self.play_file,
+        )
+        self.play_file_button.pack(side="left")
+
+        self.amplify_file_button = tk.Button(
+            self.buttons2,
+            text="process file",
+            width=5,
+            height=2,
+            command=self.start_amplify_thread,
+        )
+        self.amplify_file_button.pack(side="left")
+
+        self.play_buffer_button = tk.Button(
+            self.buttons2,
+            text="play result",
+            width=5,
+            height=2,
+            command=self.play_buffer,
+        )
+        self.play_buffer_button.pack(side="left")
+
+        self.clear_buffer_button = tk.Button(
+            self.buttons2,
+            text="clear cache",
+            width=5,
+            height=2,
+            command=self.clear_buffer,
+        )
+        self.clear_buffer_button.pack(side="left")
+
+        self.save_buffer_button = tk.Button(
+            self.buttons2,
+            text="save to file",
+            width=5,
+            height=2,
+            command=self.save_buffer,
+        )
+        self.save_buffer_button.pack(side="left")
+
+        self.progress_bar = ttk.Progressbar(
+            self.progress_frame,
+            length=300,
+            orient='horizontal',
+            mode='determinate'
+        )
+        self.progress_bar.pack(side='bottom')
+
+
+    def encode_file(self):
+        vid = cv2.VideoCapture(self.filename)
+        while vid.isOpened():
+            ret, frame = vid.read()
+            if ret:
+                success, framejpg = cv2.imencode(
+                    ".jpg",
+                    frame,
+                    [int(cv2.IMWRITE_JPEG_QUALITY), 50]
+                )
+                if success:
+                    self.buffer.append(framejpg)
+                else:
+                    break
+            else:
+                break
+        vid.release()
+
+    def play_file(self):
+        vid = cv2.VideoCapture(self.filename)
+        while vid.isOpened():
+            ret, frame = vid.read()
+            if ret:
+                cv2.imshow(
+                    "Frame",
+                    frame
+                )
+            else:
+                break
+            cv2.waitKey(33)
+            # # Loop playback
+            # if frame = max:
+            #     vid.set(cv2.CAP_PROP_POS_FRAMES, 0)
+        vid.release()
+        cv2.destroyAllWindows()
+
+    def play_buffer(self):
+        for frame in self.buffer:
+            cv2.imshow(
+                "Buffer",
+                cv2.imdecode(frame, cv2.IMREAD_COLOR)
+            )
+            k = cv2.waitKey(33) # 33ms delay equivalent to 30fps (ideally)
+            if k == 27:
+                break
+        cv2.destroyAllWindows()
+
+    def clear_buffer(self):
+        self.buffer = []
+        print("Emptying playback buffer")
+
+    def save_buffer(self):
+        if not self.buffer:
+            print("Nothing to save")
+            return
+        filename = fd.asksaveasfilename(defaultextension = '*.mov')
+        vw = cv2.VideoWriter()
+        fourcc = vw.fourcc('j','p','e','g')
+        success = vw.open(filename,fourcc,self.framerate,(self.width,self.height),True)
+        for frame in self.buffer:
+            output_frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
+            vw.write(output_frame)
+        vw.release()        
+
+    def progress_callback(self, increment):
+        self.progress_bar["value"] += increment
+
+    def amplify_file(self):
+        self.buffer = []
+        self.progress_bar["value"] = 0
+        for frame in get_phase_amplified_frames(
+            filename = self.filename,
+            magphase = int(self.alpha_entry.get()),
+            fl = float(self.fl_entry.get()),
+            fh = float(self.fh_entry.get()),
+            fs = int(self.sample_entry.get()),
+            sigma = float(self.sigma_entry.get()),
+            pyrtype = str(self.octave_options_var.get()),
+            scalevideo = float(self.scale_entry.get()),
+            progress_callback = self.progress_callback,
+        ):
+            success, framejpg = cv2.imencode(
+                ".jpg",
+                frame,
+                [int(cv2.IMWRITE_JPEG_QUALITY), 50]
+            )
+            if success:
+                self.buffer.append(framejpg)
+            else:
+                break
+        self.window.event_generate("<<Halt_Thread>>")
+
+    def amplify_thread_finished(self, event=None):
+        print("Initiating Playback")
+        self.play_buffer()
+        self.amplify_thread = None
+
+    def choose_file(self):
+        self.filename = fd.askopenfilename()
+        vr = cv2.VideoCapture(self.filename)
+        self.width = int(vr.get(cv2.CAP_PROP_FRAME_WIDTH))
+        self.height = int(vr.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        self.framerate = int(vr.get(cv2.CAP_PROP_FPS))
+        vr.release()
+
+    def start_amplify_thread(self):
+        self.amplify_thread = threading.Thread(target=self.amplify_file)
+        self.amplify_thread.start()
+
+    def run(self):
+        self.window.mainloop()
+
+if __name__ == "__main__":
+    app = App()
+    app.run()

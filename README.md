@@ -1,32 +1,27 @@
 euler_vid_mag
 =============
 
-A python implementation of one of MIT's Eulerian Video Magnification algorithms from the Siggraph 2012 paper by Hao-Yu Wu, Michael Rubinstein, Eugene Shih, John Guttag, Frédo Durand and William T. Freeman. Their work is used under license. The technique described reveals otherwise hidden information in an ordinary video stream by magnifying small colour changes in an ordinary video stream. This can be used, for example, to reveal the blood flow in a person's face.
+A python implementation MIT's Eulerian Video Magnification algorithms from both the Siggraph 2012 paper (Hao-Yu Wu, Michael Rubinstein, Eugene Shih, John Guttag, Frédo Durand and William T. Freeman) and also the "new-and-improved" phase-based approach from the 2013 paper (Neal Wadhwa, Michael Rubinstein, Frédo Durand and William T. Freeman). The code presented here is a python implementation of the matlab sources provided by MIT, which are used under license with all credit going to the authors of these algorithms; additionally, the linear implementation leans heavily on https://github.com/LabForComputationalVision/pyrtools for generating Laplacian pyramids.
 
-The paper can be found here http://people.csail.mit.edu/mrub/vidmag/ and is a great read.
+The original papers can be found here (along with more recent developments) http://people.csail.mit.edu/mrub/vidmag/ and they make for an excellent read.
 
-The code presented here is basically a python translation of the matlab sources provided by MIT, and as such all credit goes to the authors of these algorithms, I've just put them into a form which doesn't require a matlab license. Additionally this implementation leans heavily on https://github.com/LabForComputationalVision/pyrtools for generating Laplacian pyramids.
+Installation:
+Installing into a virtualenv is recommended. At the command prompt, enter:
+> pip install -e .
 
-There are two demo UIs, colour_amplify_demo and motion_magnify_demo. They can be launched from the shell using e.g.
-python motion_magnify_demo.py
+To reproduce the results for the Siggraph 2013 paper:
+1) Download the [source videos][videos] (1.3GB) from the
+  [project web page][phase] into a directory called `sample`.
+2) Type `reproduce_results_siggraph13` to reproduce the results in the paper. 
 
-Various parameters are exposed, but particularly important are the low and high frequency cutoffs - which allows the algorithm to focus on a particular range of frequencies - and the sampling rate, which much match the framerate of the original video capture.
+[videos]: http://people.csail.mit.edu/nwadhwa/phase-video/video/Source%20and%20Result%20Videos.zip
+[phase]: http://people.csail.mit.edu/nwadhwa/phase-video/
 
-The screenshots below are the before/afters of processing the "face.mp4" and "guitar.avi" files (supplied by MIT):
-http://people.csail.mit.edu/mrub/evm/video/face.mp4
-http://people.csail.mit.edu/mrub/evm/video/guitar.mp4
-using the colour and motion demos respectively with their default settings.
+There is also a little tkinter UI for demo purposes, which can be launched from the shell like this:
+> phase_amplify_app
 
-Unprocessed:
+The gif below is the MIT file 'car_engine.avi' after processing with the phase-based algorithm:
 
-![screenshot](https://raw.githubusercontent.com/aloyisus/euler_vid_mag/master/guitar.gif)
+![screenshot](https://raw.githubusercontent.com/aloyisus/euler_vid_mag/master/car_engine_pb.gif)
 
-![screenshot](https://raw.githubusercontent.com/aloyisus/euler_vid_mag/master/face.gif)
-
-Processed:
-
-![screenshot](https://raw.githubusercontent.com/aloyisus/euler_vid_mag/master/guitar_processed.gif)
-
-![screenshot](https://raw.githubusercontent.com/aloyisus/euler_vid_mag/master/face_processed.gif)
-
-Note that OpenCV 4.x is required (should be compatible with 3.x versions too) along with the associated python bindings. tkinter support is required for the UI. Necessary python3 modules are listed in requirements.txt file, pip install -r requirements.txt to install them.
+Note that OpenCV 4.x is required (should be compatible with 3.x versions too).
