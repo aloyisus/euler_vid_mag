@@ -53,12 +53,17 @@ def get_phase_amplified_frames(
     ret, frame = vr.read()
     h, w, nC = frame.shape
 
+    
     print("Loading: ", filename)
     vid = np.zeros([h, w, nC, nF],frame.dtype)
     vid[:,:,:,0] = frame
     for k in range(1, nF):
         retval, frame = vr.read()
-        vid[:,:,:,k] = frame
+        if retval:
+            vid[:,:,:,k] = frame
+        else:
+            frames = (0,k)
+            break
         progress_callback(10/nF)
         sys.stdout.write('.')
         sys.stdout.flush()
