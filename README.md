@@ -14,14 +14,15 @@ To reproduce the results for the Siggraph 2013 paper:
   [project web page][phase] into a directory called `sample`.
 2) Type `reproduce_results_siggraph13` to reproduce the results in the paper. 
 
-[videos]: http://people.csail.mit.edu/nwadhwa/phase-video/video/Source%20and%20Result%20Videos.zip
+[videos]: http://people.csail.mit.edu/nwadhwa/phase-video/video/
 [phase]: http://people.csail.mit.edu/nwadhwa/phase-video/
 
 There is also a little tkinter UI for demo purposes, which can be launched from the shell like this:
 > phase_amplify_app
 
-The gif below is the MIT file 'car_engine.avi' after processing with the phase-based algorithm:
+The gifs below are the MIT file 'car_engine.avi' before & after processing with the phase-based algorithm:
 
+![screenshot](https://raw.githubusercontent.com/aloyisus/euler_vid_mag/master/car_engine.gif)
 ![screenshot](https://raw.githubusercontent.com/aloyisus/euler_vid_mag/master/car_engine_pb.gif)
 
 Note that OpenCV 4.x is required (should be compatible with 3.x versions too).
